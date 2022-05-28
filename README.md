@@ -6,9 +6,16 @@ Example of [how to validate barcode scans in real-time](https://orcascan.com/gui
 
 First ensure you have [Python](https://www.python.org/downloads/) installed:
 
+**macOS or Linux**
 ```bash
 # should return 3.7 or higher
 python3 --version
+```
+
+**Windows**
+```bash
+# should return 3.7 or higher
+python --version
 ```
 
 Then execute the following:
@@ -19,12 +26,21 @@ git clone https://github.com/orca-scan/orca-validation-python.git
 
 # go into the new directory
 cd orca-validation-python
-
+```
+**macOS or Linux**
+```bash
 # create virtual environment and activate it
 python3 -m venv orca && source ./orca/bin/activate
-
+```
+**Windows**
+```bash
+# create virtual environment and activate it
+python -m venv orca && source ./orca/scripts/activate
+```
+**All**
+```bash
 # upgrade pip to latest version
-pip install --upgrade pip
+python -m pip install --upgrade pip
 
 # install dependencies
 pip install -r requirements.txt
@@ -48,14 +64,14 @@ Your server will now be running on port 5000.
 You can emulate an Orca Scan Validation input using [cURL](https://dev.to/ibmdeveloper/what-is-curl-and-why-is-it-all-over-api-docs-9mh) by running the following:
 
 ```bash
-curl --location --request POST 'http://127.0.0.1:5000/' \
+curl --location --request POST 'http://localhost:5000/' \
 --header 'Content-Type: application/json' \
 --data-raw '{
     "___orca_sheet_name": "Vehicle Checks",
     "___orca_user_email": "hidden@requires.https",
     "Barcode": "orca-scan-test",
     "Date": "2022-04-19T16:45:02.851Z",
-    "Name": Orca Scan Validation Example,
+    "Name": "Orca Scan Validation",
 }'
 ```
 ### Important things to note
