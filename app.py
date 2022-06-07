@@ -12,7 +12,7 @@ def orca_validation():
     if request.method == 'POST':
         data = request.get_json()
 
-        # dubug purpose: show in console raw data received
+        # debug purpose: show in console raw data received
         print("Request received: \n"+json.dumps(data, sort_keys=True, indent=4))
 
         # NOTE:
@@ -28,6 +28,6 @@ def orca_validation():
                 "message": "Name cannot contain more than 20 characters",
                 })
 
-        # return HTTP Status 204 (No Content)
-        return '', 204
+        # return HTTP Status 200 with no body
+        return '', 200
 
