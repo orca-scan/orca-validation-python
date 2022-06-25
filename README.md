@@ -48,10 +48,18 @@ pip install -r requirements.txt
 
 ## Run
 
+**macOS or Linux**
 ```bash
 # activate virtual environment
 source ./orca/bin/activate
-
+```
+**Windows**
+```bash
+# activate virtual environment
+source ./orca/scripts/activate
+```
+**All**
+```bash
 # enable development features only for development
 export FLASK_ENV=development
 
@@ -94,7 +102,7 @@ def orca_validation():
     if request.method == 'POST':
         data = request.get_json()
 
-        # dubug purpose: show in console raw data received
+        # debug purpose: show in console raw data received
         print("Request received: \n"+json.dumps(data, sort_keys=True, indent=4))
 
         # NOTE:
@@ -110,8 +118,8 @@ def orca_validation():
                 "message": "Name cannot contain more than 20 characters",
                 })
 
-        # return HTTP Status 204 (No Content)
-        return '', 204
+        # return HTTP Status 200 with no body
+        return '', 200
 ```
 ## Test server locally against Orca Cloud
 
