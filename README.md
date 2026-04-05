@@ -1,150 +1,141 @@
 # orca-validation-python
 
-Example of [how to validate barcode scans in real-time](https://orcascan.com/guides/how-to-validate-barcode-scans-in-real-time-56928ff9) using [Python](https://www.python.org/) and [flask](https://github.com/pallets/flask) framework.
+This is a working example of how to build a [Validation URL](https://orcascan.com/guides/barcode-scan-validation-webhook-56928ff9) for [Orca Scan](https://orcascan.com/) using [Python](https://www.python.org/) and [Flask](https://github.com/pallets/flask).
 
-## Install
+Why? When someone scans a barcode in the Orca Scan app, you might want to check the data before it gets saved. A Validation URL lets you:
 
-First ensure you have [Python](https://www.python.org/downloads/) installed:
+- **Reject bad data** - block a scan if a value is missing, out of range, or a duplicate
+- **Modify data** - auto-format, trim, or fill in fields before saving
+- **Guide the user** - show a success, warning, or error message right in the app
 
-**macOS or Linux**
-```bash
-# should return 3.7 or higher
-python3 --version
+## How it works
+
+When a user scans a barcode or edits a field, Orca Scan sends a POST request to your server with the full row data:
+
+```json
+{
+    "___orca_sheet_name": "Vehicle Checks",
+    "___orca_user_email": "user@example.com",
+    "___orca_row_id": "abc123",
+    "Barcode": "orca-scan-test",
+    "Name": "Orca Scan"
+}
 ```
 
-**Windows**
-```bash
-# should return 3.7 or higher
-python --version
+Fields starting with `___` are Orca system fields that describe the context of the scan. Everything else matches your sheet column names exactly (case and spaces matter).
+
+Your server responds to tell Orca Scan what to do:
+
+| Response                        | What happens                                                 |
+|:--------------------------------|:-------------------------------------------------------------|
+| HTTP 204                        | Allow - data saves as-is                                     |
+| HTTP 200 with fields            | Modify - Orca Scan updates the fields you return, then saves |
+| HTTP 400 with `___orca_message` | Reject - user sees an error and the save is blocked          |
+
+### In-app messages
+
+You can show messages in the app by including `___orca_message` in your response:
+
+```json
+{
+    "___orca_message": {
+        "display": "notification",
+        "type": "success",
+        "message": "Item verified"
+    }
+}
 ```
 
-Then execute the following:
+| Field     | Value          | Description                        |
+|:----------|:---------------|:-----------------------------------|
+| `display` | `notification` | Brief banner at the top of the app |
+|           | `dialog`       | Popup the user must dismiss        |
+| `type`    | `success`      | Green                              |
+|           | `warning`      | Yellow                             |
+|           | `error`        | Red                                |
+
+> Your server must respond within 750ms or Orca Scan will ignore the response.
+
+## Getting started
+
+You'll need [Python](https://www.python.org/downloads/) 3.8+ installed (`python3 --version` to check) and an [Orca Scan](https://orcascan.com/) account.
 
 ```bash
-# download this example code
 git clone https://github.com/orca-scan/orca-validation-python.git
-
-# go into the new directory
 cd orca-validation-python
 ```
+
 **macOS or Linux**
 ```bash
-# create virtual environment and activate it
 python3 -m venv orca && source ./orca/bin/activate
 ```
+
 **Windows**
 ```bash
-# create virtual environment and activate it
-python -m venv orca && source ./orca/scripts/activate
+python -m venv orca && .\orca\Scripts\activate
 ```
-**All**
-```bash
-# upgrade pip to latest version
-python -m pip install --upgrade pip
 
-# install dependencies
+**All platforms**
+```bash
 pip install -r requirements.txt
+python app.py
 ```
 
-## Run
+Your server is now running at `http://localhost:8888`.
 
-**macOS or Linux**
-```bash
-# activate virtual environment
-source ./orca/bin/activate
-```
-**Windows**
-```bash
-# activate virtual environment
-source ./orca/scripts/activate
-```
-**All**
-```bash
-# enable development features only for development
-export FLASK_ENV=development
+## Try it
 
-# start the project
-flask run -p 5000 
-```
-
-Your server will now be running on port 5000.
-
-You can emulate an Orca Scan Validation input using [cURL](https://dev.to/ibmdeveloper/what-is-curl-and-why-is-it-all-over-api-docs-9mh) by running the following:
+Use [cURL](https://curl.se/) to send a test request from your terminal (just like Orca Scan would):
 
 ```bash
-curl --location --request POST 'http://localhost:5000/' \
---header 'Content-Type: application/json' \
---data-raw '{
+curl -X POST http://localhost:8888 \
+  -H 'Content-Type: application/json' \
+  -H 'orca-sheet-name: Vehicle Checks' \
+  -H 'orca-secret: your-secret-here' \
+  -d '{
     "___orca_sheet_name": "Vehicle Checks",
-    "___orca_user_email": "hidden@requires.https",
+    "___orca_user_email": "user@example.com",
+    "___orca_row_id": "abc123",
     "Barcode": "orca-scan-test",
-    "Date": "2022-04-19T16:45:02.851Z",
-    "Name": "Orca Scan Validation",
-}'
+    "Name": "Orca Scan"
+  }'
 ```
-### Important things to note
 
-1. Only Orca Scan system fields start with `___`
-2. Properties in the JSON payload are an exact match to the  field names in your sheet _(case and space)_
+- `Name` is 9 characters, which is under 20 - you should get an empty `HTTP 204` response (data allowed)
+- Change `"Name"` to something longer than 20 characters and you should get `HTTP 400` with an error message (data rejected)
 
-## Example
+## Connect to Orca Scan
 
-This [example](app.py) uses the [flask](https://github.com/pallets/flask) framework:
-
-### Barcode validation
-
-[Orca Scan Barcode Data Validation](https://orcascan.com/guides/how-to-validate-barcode-scans-in-real-time-56928ff9)
-
-```python
-# POST / handler
-@app.route('/', methods=['POST'])
-def orca_validation():
-    if request.method == 'POST':
-        data = request.get_json()
-
-        # debug purpose: show in console raw data received
-        print("Request received: \n"+json.dumps(data, sort_keys=True, indent=4))
-
-        # NOTE:
-        # orca system fields start with ___
-        # you can access the value of each field using the field name (data["Name"], data["Barcode"], data["Location"])
-        name = data["Name"]
-
-        # validation example
-        if(len(name) > 20):
-            # return error message
-            return json.dumps({
-                "title": "Invalid Name",
-                "message": "Name cannot contain more than 20 characters",
-                })
-
-        # return HTTP Status 200 with no body
-        return '', 200
-```
-## Test server locally against Orca Cloud
-
-To expose the server securely from localhost and test it easily against the real Orca Cloud environment you can use [Secure Tunnels](https://ngrok.com/docs/secure-tunnels#what-are-ngrok-secure-tunnels). Take a look at [Ngrok](https://ngrok.com/) or [Cloudflare](https://www.cloudflare.com/).
+Orca Scan needs to reach your server over the internet. During development, [localtunnel](https://github.com/localtunnel/localtunnel) creates a temporary public URL that points to your machine:
 
 ```bash
-ngrok http 5000
+npx localtunnel --port 8888
 ```
 
-## Troubleshooting
+Copy the URL it gives you and paste it in Orca Scan under **Integrations > Events API > Validation URL**.
 
-If you run into any issues not listed here, please [open a ticket](https://github.com/orca-scan/orca-validation-python/issues).
+When you're ready to go live, deploy to any Python host and update the URL.
 
-## Examples in other langauges
-* [orca-validation-dotnet](https://github.com/orca-scan/orca-validation-dotnet)
-* [orca-validation-python](https://github.com/orca-scan/orca-validation-python)
-* [orca-validation-go](https://github.com/orca-scan/orca-validation-go)
-* [orca-validation-java](https://github.com/orca-scan/orca-validation-java)
-* [orca-validation-php](https://github.com/orca-scan/orca-validation-php)
-* [orca-validation-node](https://github.com/orca-scan/orca-validation-node)
+## Security
 
-## History
+Set a secret in Orca Scan (**Integrations > Events API > Secret**) and Orca Scan will send it as an `orca-secret` header with every request. Verify it on your server to make sure the request is genuine. See the commented example in [app.py](app.py).
 
-For change-log, check [releases](https://github.com/orca-scan/orca-validation-python/releases).
+## Help
+
+[Chat to us live](https://orcascan.com/#chat) if you run into any issues.
+
+## Examples in other languages
+
+| Language | Repository             |
+|:---------|:-----------------------|
+| C#       | orca-validation-dotnet |
+| Python   | orca-validation-python |
+| Go       | orca-validation-go     |
+| Java     | orca-validation-java   |
+| PHP      | orca-validation-php    |
+| Node.js  | orca-validation-node   |
 
 ## License
 
-&copy; Orca Scan, the [Barcode Scanner app for iOS and Android](https://orcascan.com).
+&copy; Orca Scan, the [Barcode Scanner app for iOS and Android](https://orcascan.com/)
+
