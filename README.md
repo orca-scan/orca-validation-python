@@ -78,7 +78,7 @@ python -m venv orca && .\orca\Scripts\activate
 **All platforms**
 ```bash
 pip install -r requirements.txt
-python app.py
+python server.py
 ```
 
 Your server is now running at `http://localhost:8888`.
@@ -118,7 +118,7 @@ When you're ready to go live, deploy to any Python host and update the URL.
 
 ## Security
 
-Set a secret in Orca Scan (**Integrations > Events API > Secret**) and Orca Scan will send it as an `orca-secret` header with every request. Verify it on your server to make sure the request is genuine. See the commented example in [app.py](app.py).
+Set a secret in Orca Scan (**Integrations > Events API > Secret**) and Orca Scan will send it as an `orca-secret` header with every request. Verify it on your server to make sure the request is genuine. See the commented example in [server.py](server.py).
 
 ## Help
 
