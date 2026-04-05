@@ -2,7 +2,7 @@
 
 This is a working example of how to build a [Validation URL](https://orcascan.com/guides/barcode-scan-validation-webhook-56928ff9) for [Orca Scan](https://orcascan.com/) using [Python](https://www.python.org/) and [Flask](https://github.com/pallets/flask).
 
-Why? When someone scans a barcode in the Orca Scan app, you might want to check the data before it gets saved. A Validation URL lets you:
+**Why?** When someone scans a barcode in the Orca Scan app, you might want to check the data before it gets saved. A Validation URL lets you:
 
 - **Reject bad data** - block a scan if a value is missing, out of range, or a duplicate
 - **Modify data** - auto-format, trim, or fill in fields before saving
